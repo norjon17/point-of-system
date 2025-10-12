@@ -1,0 +1,103 @@
+import { useState } from "react"
+import {
+  IsSortedType,
+  PaginationType,
+} from "../components/TanStackMantine/TanStackMantineCPag"
+import { removeWhiteSpace } from "../utils/string/removeWhiteSpace"
+import { http } from "../middleware/axiosConfig"
+import { API } from "../api"
+import { AxiosError } from "axios"
+import { handleErrorMessage } from "./errorNoti"
+import { QUERY_NAME } from "../constants/constants"
+import { useQuery } from "@tanstack/react-query"
+
+interface IProps {
+  enableCashTransactions?: boolean
+  enableTotalCash?: boolean
+}
+
+export const useCashTransactions = ({
+  enableCashTransactions,
+  enableTotalCash,
+}: IProps = {}) => {
+  const [filterData, setFilterData] = useState<CashTransactionFilterType>({
+    rows: 10,
+    page: 1,
+    search: "",
+    order_by: {
+      sort: "desc",
+      id: "last_transaction",
+    },
+  })
+
+  const {
+    data: transactions,
+    isLoading: transactionsLoading,
+    refetch: transactionsRefetch,
+  } = useQuery({
+    queryFn: async () => {
+      try {
+        const filter = removeWhiteSpace(
+          filterData.search ? filterData.search : ""
+        )
+
+        let formData: CashTransactionFilterType = {
+          ...filterData,
+        }
+
+        if (filter.length > 0) {
+          formData = {
+            ...formData,
+            search: formData.search,
+          }
+        }
+
+        const res = await http.post(`${API.CASH}/transactions`, formData)
+        return res.data as PaginationType
+      } catch (e) {
+        const error = e as AxiosError
+        handleErrorMessage(error)
+        return null
+      }
+    },
+    queryKey: [`${QUERY_NAME.CASH}-transactions`, { ...filterData }],
+    enabled: enableCashTransactions,
+  })
+  const {
+    data: totalCash,
+    isLoading: totalCashLoading,
+    refetch: totalCashRefetch,
+  } = useQuery({
+    queryFn: async () => {
+      try {
+        const res = await http.get(`${API.CASH}/total-cash`)
+        return res.data as number
+      } catch (e) {
+        const error = e as AxiosError
+        handleErrorMessage(error)
+        return 0
+      }
+    },
+    queryKey: [`${QUERY_NAME.CASH}-total-cash`],
+    enabled: enableTotalCash,
+  })
+
+  return {
+    transactions,
+    transactionsLoading,
+    transactionsRefetch,
+    filterData,
+    setFilterData,
+    totalCash,
+    totalCashLoading,
+    totalCashRefetch,
+  }
+}
+
+export type CashTransactionFilterType = {
+  rows: number
+  page: number
+  search?: string
+  user_id?: number | null
+  order_by?: IsSortedType
+}
