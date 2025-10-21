@@ -21,7 +21,6 @@ import { useEffect, useState } from "react";
 import { ProductType } from "../../types";
 import { useFieldArray, useForm } from "react-hook-form";
 import { POSFormType, POSOrderType } from "../../types/formTypes";
-import { CURRENTLINK } from "../../constants/constants";
 import { useProducts } from "../../hooks/products";
 import { nanoid } from "nanoid";
 import { MdImageNotSupported } from "react-icons/md";
@@ -155,7 +154,6 @@ export default function PointOfSale() {
                     <SalesCustomerOrders {...{ posForm, ordersField }} />
                     <SalesCOActions {...{ posForm }} />
                 </Stack>
-                <Paper shadow="xs" p="xs" flex={1}></Paper>
             </Stack>
 
             <Modal
@@ -201,7 +199,7 @@ export default function PointOfSale() {
                                 <Loader />
                             </Center>
                         )}
-                        <SimpleGrid cols={4}>
+                        <SimpleGrid cols={{ sm: 1, md: 2, lg: 4 }}>
                             {products?.data.map((item: ProductType) => (
                                 <Paper
                                     shadow="xs"
