@@ -225,6 +225,7 @@ class SaleController extends Controller
                 // 'balance' => $balance,
                 // 'received' => $cash,
                 'address' => $request->address,
+                'transact_by_id' => $auth_user->id
             ]);
 
             //sale or gcash transaction logs
