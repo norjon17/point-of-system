@@ -25,7 +25,7 @@ export default function Users() {
     // ])
     const columns: ColumnDef<UserType>[] = [
         {
-            header: "Name",
+            header: "First Name",
             cell: ({ cell }) => {
                 return (
                     <Text
@@ -42,6 +42,28 @@ export default function Users() {
                 );
             },
             id: "name",
+            meta: {
+                sorting: false,
+            },
+        },
+        {
+            header: "Last Name",
+            cell: ({ cell }) => {
+                return (
+                    <Text
+                        c={cell.row.original.active !== 1 ? "red" : undefined}
+                        style={{
+                            textDecoration:
+                                cell.row.original.active !== 1
+                                    ? "line-through"
+                                    : undefined,
+                        }}
+                    >
+                        {cell.row.original.lname}
+                    </Text>
+                );
+            },
+            id: "lname",
             meta: {
                 sorting: false,
             },
