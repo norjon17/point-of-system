@@ -88,11 +88,10 @@ class SaleController extends Controller
 
             //price is the product, 
             //sub total is the TOTAL to be paid
-            $sub_total = $price + $service_fee + $delivery_fee - $discount;
+            $total = $price + $service_fee + $delivery_fee - $discount;
 
-            $vat = round($sub_total * 0.12, 2);
-            $balance = $sub_total + $vat;
-            $change = (float) $cash - $balance;
+            $vat = round($total - $total / 1.12, 2);
+            $change = (float) $cash - $total;
 
             $cash_mode = $request->cash_mode;
             $customer = Customer::find($request->customer_id);
@@ -221,7 +220,7 @@ class SaleController extends Controller
                 'delivery_fee' => $delivery_fee,
                 'discount' => $discount,
                 'price' => $price,
-                'sub_total' => $sub_total,
+                'sub_total' => $total, //its a VAT inclusive now so it's using total instead of Sub Total
                 'vat' => $vat,
                 // 'balance' => $balance,
                 // 'received' => $cash,
