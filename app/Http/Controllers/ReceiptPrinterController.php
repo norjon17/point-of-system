@@ -84,7 +84,7 @@ class ReceiptPrinterController extends Controller
     public function printData(string $sales_id)
     {
         try {
-            $sale = Sale::with(['payment_mode.cash_type', 'total_paid', 'products', 'sale_products'])->findOrFail($sales_id);
+            $sale = Sale::with(['payment_mode.cash_type', 'total_paid', 'products', 'sale_products', 'customer', 'transact_by'])->findOrFail($sales_id);
             $paid_via = ($sale->payment_mode->cash_type->id === 4) ? 'GCash' : 'Cash';
 
             $date_time = FormatDate::formatDateTime(now());
@@ -99,10 +99,14 @@ class ReceiptPrinterController extends Controller
 
             $receipt = '';
             $receipt .= str_pad($companyName, 32, ' ', STR_PAD_BOTH) . "\n";
-            $receipt .= "Currency: PHP\n";
-            $receipt .= "Location: \n";
-            $receipt .= "Tel: \n";
-            $receipt .= "TIN: \n\n";
+            $receipt .= "Payment Mode: $paid_via\n";
+            $receipt .= "Customer: {$sale->customer->company}\n";
+            $transact_by = '';
+            if ($sale->transact_by) {
+                $last_name = $sale->transact_by->lname ? strtoupper($sale->transact_by->lname[0]) : '';
+                $transact_by = "{$sale->transact_by->name} {$last_name}";
+            }
+            $receipt .= "Sales Person: $transact_by\n\n";
             $receipt .= "DATE:  $sale_date_time\n";
             $receipt .= str_repeat("=", 32) . "\n";
 
@@ -149,60 +153,64 @@ class ReceiptPrinterController extends Controller
             }
 
             // Payment History
-            if ($sale->total_paid->isNotEmpty()) {
-                $paymentHistory = str_repeat("=", 32) . "\n";
-                $paymentHistory .= "PAYMENT HISTORY:\n";
+            //TODO: disabled temporary
+            // if ($sale->total_paid->isNotEmpty()) {
+            //     $paymentHistory = str_repeat("=", 32) . "\n";
+            //     $paymentHistory .= "PAYMENT HISTORY:\n";
 
-                foreach ($sale->total_paid as $payment) {
-                    $mode = $payment->type_id === 4 ? 'GCash' : 'Cash';
-                    $timestamp = FormatDate::formatDate($payment->created_at);
+            //     foreach ($sale->total_paid as $payment) {
+            //         $mode = $payment->type_id === 4 ? 'GCash' : 'Cash';
+            //         $timestamp = FormatDate::formatDate($payment->created_at);
 
-                    $paymentHistory .= sprintf(
-                        "%-5s  %-11s  %12s\n",
-                        $mode,
-                        $timestamp,
-                        $formatMoney($payment->amount)
-                    );
+            //         $paymentHistory .= sprintf(
+            //             "%-5s  %-11s  %12s\n",
+            //             $mode,
+            //             $timestamp,
+            //             $formatMoney($payment->amount)
+            //         );
 
-                    $totalPaid += $payment->amount;
-                }
+            //         $totalPaid += $payment->amount;
+            //     }
 
-                $paymentHistory .= str_repeat("=", 32) . "\n";
-                $paymentHistory .= sprintf(
-                    "%-20s %11s\n",
-                    "TOTAL PAID:",
-                    $formatMoney($totalPaid)
-                );
+            //     $paymentHistory .= str_repeat("=", 32) . "\n";
+            //     $paymentHistory .= sprintf(
+            //         "%-20s %11s\n",
+            //         "TOTAL PAID:",
+            //         $formatMoney($totalPaid)
+            //     );
 
-                $receipt .= $paymentHistory;
-            }
+            //     $receipt .= $paymentHistory;
+            // }
 
             $receipt .= str_repeat("=", 32) . "\n";
 
-            // Use actual VAT, Discount, Subtotal and Total amount to pay
-            $vat = $sale->vat;
+
             // Sum line-item discounts
             $lineItemDiscountTotal = $sale->sale_products->sum('discount');
             // Add to sale-level discount
             $totalDiscount = $lineItemDiscountTotal + $sale->discount;
 
-            $subtotal = $actualTotal;
-            $totalToPay = $subtotal + $vat - $totalDiscount;
+            $total = $actualTotal - $totalDiscount;
+            // VAT inclusive
+            $vat = $sale->vat;
+            // $totalToPay = $subtotal + $vat - $totalDiscount;
 
-            $receipt .= sprintf("%-20s %11s\n", "SUBTOTAL:", $formatMoney($subtotal));
-            $receipt .= sprintf("%-20s %11s\n", "VAT 12%:", $formatMoney($vat));
+            $receipt .= sprintf("%-20s %11s\n", "SUBTOTAL:", $formatMoney($total));
             $receipt .= sprintf("%-20s %11s\n", "DISCOUNT:", $formatMoney($totalDiscount));
-            $receipt .= sprintf("%-20s %11s\n", "TOTAL BILL:", $formatMoney($totalToPay));
+            $receipt .= sprintf("%-20s %11s\n", "VAT 12%:", $formatMoney($vat));
+            $receipt .= sprintf("%-20s %11s\n", "TOTAL BILL:", $formatMoney($total));
 
             // Show balance and received amounts if useful
             $receipt .= sprintf("%-20s %11s\n", "RECEIVED:", $formatMoney($sale->received));
 
-            if ($sale->received > $totalToPay) {
-                $change = $sale->received - $totalToPay;
+            if ($sale->received > $total) {
+                $change = $sale->received - $total;
                 $receipt .= sprintf("%-20s %11s\n", "CHANGE:", $formatMoney($change));
-            } else {
-                $receipt .= sprintf("%-20s %11s\n", "BALANCE:", $formatMoney($sale->balance));
             }
+            //TODO: temporary disabled
+            //  else {
+            //     $receipt .= sprintf("%-20s %11s\n", "BALANCE:", $formatMoney($sale->balance));
+            // }
 
             $receipt .= str_repeat("=", 32) . "\n";
             $receipt .= "Date Printed: $date_time\n";

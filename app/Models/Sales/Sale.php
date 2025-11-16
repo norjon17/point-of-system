@@ -7,6 +7,7 @@ use App\Models\Customer\Customer;
 use App\Models\DeliveryStatus;
 use App\Models\PaymentMode;
 use App\Models\Product\Product;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
@@ -35,6 +36,7 @@ class Sale extends Model
         'vehicle_id',
         'delivery_status_id',
         'cash_transaction_id',
+        'transact_by_id'
     ];
 
     protected $casts = [
@@ -52,9 +54,10 @@ class Sale extends Model
         'vehicle_id' => 'integer',
         'delivery_status_id' => 'integer',
         'cash_transaction_id' => 'integer',
+        'transact_by_id' => 'integer'
     ];
 
-    protected $appends = ['balance', 'received'];
+    protected $append = ['balance', 'received'];
 
     public function customer(): HasOne
     {
@@ -121,5 +124,10 @@ class Sale extends Model
             ->flatMap(fn($transaction) => $transaction->denominations)
             ->sum('denomination');
         return $getTotalAmount($this->total_paid);
+    }
+
+    public function transact_by(): HasOne
+    {
+        return $this->hasOne(User::class, 'id', 'transact_by_id');
     }
 }
