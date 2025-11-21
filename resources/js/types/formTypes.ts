@@ -132,6 +132,7 @@ export type TurnoverFormType = {
 export type UserFormType = {
     id?: number | null;
     name: string;
+    lname?: string | null;
     username: string;
     password: string;
     access_id: number | null;

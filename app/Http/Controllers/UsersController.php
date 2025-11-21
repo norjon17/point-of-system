@@ -19,6 +19,7 @@ class UsersController extends Controller
             Gate::authorize('admin_create', auth()->user());
             $validator = Validator::make($request->all(), [
                 'name' => 'required',
+                'lname' => 'string|nullable',
                 'username' => "required|unique:users,username",
                 // 'access_id' => 'required|numeric',
                 'password' => 'required|string|min:6'
@@ -33,6 +34,7 @@ class UsersController extends Controller
 
             User::create([
                 'name' => $request->name,
+                'lname' => $request->lname ?? null,
                 'email' => $request->name,
                 'password' => Hash::make($request->password),
                 'username' => $request->username,
@@ -52,8 +54,9 @@ class UsersController extends Controller
             Gate::authorize('admin_update', auth()->user());
             $validator = Validator::make($request->all(), [
                 'name' => 'required',
+                'lname' => 'string|nullable',
                 'username' => "required|unique:users,username,$request->id",
-                'access_id' => 'required|numeric',
+                // 'access_id' => 'required|numeric',
                 'password' => 'nullable|string|min:6',
                 'active' => 'required'
             ]);
@@ -66,9 +69,10 @@ class UsersController extends Controller
 
             User::where('id', $request->id)->update([
                 'name' => $request->name,
+                'lname' => $request->lname ?? null,
                 'email' => $request->name,
                 'username' => $request->username,
-                'access_id' => $request->access_id,
+                // 'access_id' => $request->access_id,
                 'active' => $request->active
             ]);
             if ($request->password) {
